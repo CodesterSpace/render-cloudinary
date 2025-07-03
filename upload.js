@@ -17,12 +17,23 @@ const upload = multer({ storage });
 
 router.post('/', upload.single('image'), async (req, res) => {
   try {
+    const { filename } = req.body;
+
     const streamUpload = (buffer) => {
       return new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream((error, result) => {
-          if (result) resolve(result);
-          else reject(error);
-        });
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            public_id: filename || undefined, // donne un nom au fichier Cloudinary
+            folder: 'uploads', // facultatif : stocker dans un dossier
+          },
+          (error, result) => {
+            if (result) {
+              resolve(result);
+            } else {
+              reject(error);
+            }
+          }
+        );
         streamifier.createReadStream(buffer).pipe(stream);
       });
     };
@@ -31,7 +42,7 @@ router.post('/', upload.single('image'), async (req, res) => {
     res.json({ url: result.secure_url });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Erreur lors de l\'upload' });
+    res.status(500).json({ error: "Erreur lors de l'upload" });
   }
 });
 
